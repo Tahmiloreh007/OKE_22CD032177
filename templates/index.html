@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Emotion Detector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            font-family: 'Poppins', sans-serif;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        form {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            text-align: center;
+            transition: transform 0.3s ease;
+            width: 350px;
+        }
+        form:hover {
+            transform: translateY(-5px);
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        input[type="file"] {
+            background-color: #fff;
+            cursor: pointer;
+        }
+        button {
+            background-color: #6C63FF;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #5146d0;
+        }
+        .preview {
+            margin-top: 15px;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: 500;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>😊 Face Emotion Detector</h1>
+
+    <form id="emotionForm">
+        <input type="text" name="name" placeholder="Enter your full name" required>
+        <input type="email" name="email" placeholder="Enter your email" required>
+        <input type="file" name="file" accept="image/*" required onchange="previewImage(event)">
+        <div class="preview">
+            <img id="preview" src="#" alt="Image preview">
+        </div>
+        <button type="submit">Detect Emotion</button>
+    </form>
+
+    <div class="result" id="result">Detected Emotion will appear here</div>
+
+    <script>
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('preview');
+                output.src = reader.result;
+                output.style.display = 'block';
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    
+        const form = document.getElementById('emotionForm');
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+    
+            const formData = new FormData(form);
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerText = "Analyzing emotion...";
+    
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+    
+                const data = await response.json();
+                if (data.error) {
+                    resultDiv.innerText = "Error: " + data.error;
+                } else {
+                    resultDiv.innerText = "Detected Emotion: " + data.emotion;
+                }
+            } catch (error) {
+                resultDiv.innerText = "An error occurred while predicting.";
+                console.error(error);
+            }
+        })
+    </script>
+</body>
+</html>
