@@ -5,10 +5,21 @@ import cv2
 import os
 
 app = Flask(__name__)
+
+# Load model once
 model = tf.keras.models.load_model('face_emotionModel.h5')
 
-# Labels (adjust if your model uses different ones)
+# Labels (match your model)
 emotions = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+
+def preprocess_image(file_path):
+    """Read, resize, normalize, and reshape image for model prediction."""
+    img = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)  # Change to IMREAD_COLOR if needed
+    img = cv2.resize(img, (48, 48))
+    img = img / 255.0
+    img = np.expand_dims(img, axis=0)      # batch dimension
+    img = np.expand_dims(img, axis=-1)     # channel dimension (for grayscale)
+    return img
 
 @app.route('/')
 def home():
@@ -24,21 +35,20 @@ def predict():
         return jsonify({'error': 'Empty file name'})
     
     # Save temporarily
-    path = os.path.join('static', 'temp.jpg')
-    file.save(path)
+    temp_path = os.path.join('static', 'temp.jpg')
+    file.save(temp_path)
 
-    # Read and preprocess
-    img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    img = cv2.resize(img, (48, 48))
-    img = img / 255.0
-    img = np.reshape(img, (1, 48, 48, 1))
-
-    # Predict
-    prediction = model.predict(img)
-    emotion = emotions[np.argmax(prediction)]
-
+    try:
+        # Preprocess & predict
+        img = preprocess_image(temp_path)
+        prediction = model.predict(img)
+        emotion = emotions[np.argmax(prediction)]
+    except Exception as e:
+        os.remove(temp_path)
+        return jsonify({'error': str(e)})
+    
     # Remove temporary file
-    os.remove(path)
+    os.remove(temp_path)
 
     return jsonify({'emotion': emotion})
 
